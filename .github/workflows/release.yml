@@ -46,12 +46,12 @@ jobs:
             sha256 "${{ steps.sha.outputs.sha256 }}"
             license "MIT"
 
-            depends_on "ncurses"
-
             livecheck do
               url :stable
               regex(/^v?(\d+(?:\.\d+)+)$/i)
             end
+
+            depends_on "ncurses"
 
             def install
               system "make", "VERSION=${VERSION_STRIPPED}"
