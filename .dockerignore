@@ -1,0 +1,12 @@
+termv
+*.o
+.dockerignore
+Dockerfile
+docker-compose.yml
+docker-compose.ci.yml
+README.md
+BREW-TAP.md
+THEMES.md
+.github/
+.gitignore
+LICENSE

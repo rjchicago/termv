@@ -1,0 +1,7 @@
+services:
+  termv:
+    build: .
+    stdin_open: true   # -i (interactive)
+    tty: true          # -t (allocate pseudo-TTY)
+    environment:
+      - TERM=xterm-256color

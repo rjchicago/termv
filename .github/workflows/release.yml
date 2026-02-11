@@ -1,0 +1,73 @@
+name: Release
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get tag
+        id: tag
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ steps.tag.outputs.version }}" --generate-notes
+
+      - name: Download tarball and compute SHA256
+        id: sha
+        run: |
+          curl -sL "https://github.com/rjchicago/termv/archive/refs/tags/${{ steps.tag.outputs.version }}.tar.gz" \
+            -o termv.tar.gz
+          echo "sha256=$(shasum -a 256 termv.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@v4
+        with:
+          repository: rjchicago/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Update formula
+        run: |
+          VERSION="${{ steps.tag.outputs.version }}"
+          VERSION_STRIPPED="${VERSION#v}"
+          cat > Formula/termv.rb << EOF
+          class Termv < Formula
+            desc "Terminal Velocity - a high-performance terminal-based game"
+            homepage "https://github.com/rjchicago/termv"
+            url "https://github.com/rjchicago/termv/archive/refs/tags/${VERSION}.tar.gz"
+            sha256 "${{ steps.sha.outputs.sha256 }}"
+            license "MIT"
+
+            depends_on "ncurses"
+
+            livecheck do
+              url :stable
+              regex(/^v?(\d+(?:\.\d+)+)$/i)
+            end
+
+            def install
+              system "make", "VERSION=${VERSION_STRIPPED}"
+              bin.install "termv"
+            end
+
+            test do
+              assert_match "termv", shell_output("#{bin}/termv --version")
+            end
+          end
+          EOF
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/termv.rb
+          git commit -m "Update termv to ${{ steps.tag.outputs.version }}"
+          git push
