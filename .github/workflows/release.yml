@@ -10,7 +10,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Get tag
         id: tag
@@ -29,7 +29,7 @@ jobs:
           echo "sha256=$(shasum -a 256 termv.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
       - name: Checkout homebrew-tap
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: rjchicago/homebrew-tap
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
